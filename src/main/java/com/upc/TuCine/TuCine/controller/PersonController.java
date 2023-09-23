@@ -1,9 +1,18 @@
 package com.upc.TuCine.TuCine.controller;
 
+import com.upc.TuCine.TuCine.dto.ContentRatingDto;
+import com.upc.TuCine.TuCine.dto.OwnerDto;
 import com.upc.TuCine.TuCine.dto.PersonDto;
 import com.upc.TuCine.TuCine.dto.TypeUserDto;
+import com.upc.TuCine.TuCine.dto.save.Person.PersonSaveDto;
 import com.upc.TuCine.TuCine.exception.ValidationException;
 import com.upc.TuCine.TuCine.service.PersonService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +23,7 @@ import java.util.List;
 
 @RestController
 @CrossOrigin(origins = "*")
+@Tag(name = "Persons",description = "API de Persons")
 @RequestMapping("/api/TuCine/v1")
 public class PersonController {
 
@@ -28,6 +38,24 @@ public class PersonController {
     //Method: GET
     @Transactional(readOnly = true)
     @GetMapping("/persons")
+    @Operation(summary = "Obtener la lista de todas las personas")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Se obtuvieron todas las personas",
+                    content = {
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = PersonDto.class,type = "array")
+                            )
+                    }
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "No se encontraron las personas",
+                    content = @Content
+            )
+    })
     public ResponseEntity<List<PersonDto>> getAllPersons() {
         return new ResponseEntity<>(personService.getAllPersons(), HttpStatus.OK);
     }
@@ -36,6 +64,26 @@ public class PersonController {
     //Method: GET
     @Transactional(readOnly = true)
     @GetMapping("/persons/{id}/typeUser")
+    @Operation(summary = "Obtener el tipo de usuario que es la persona mediante su id")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Se obtuvo el typeUser de la persona",
+                            content = {
+                                    @Content(
+                                            mediaType = "application/json",
+                                            schema = @Schema(implementation = TypeUserDto.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "No se encontró el tipo de usuario de la persona",
+                            content = @Content
+                    )
+            }
+    )
     public ResponseEntity<TypeUserDto> getTypeUserByPersonId(@PathVariable("id") Integer id) {
         TypeUserDto typeUserDto= personService.getTypeUserByPersonId(id);
         if (typeUserDto == null) {
@@ -48,52 +96,84 @@ public class PersonController {
     //Method: POST
     @Transactional
     @PostMapping("/persons")
-    public ResponseEntity<PersonDto> createPerson(@RequestBody PersonDto personDto){
-        validatePerson(personDto);
-        existsByPersonEmail(personDto.getEmail());
-        existByPersonDni(personDto.getNumberDni());
-        return new ResponseEntity<>(personService.createPerson(personDto), HttpStatus.CREATED);
+    @Operation(summary = "Crear una nueva persona")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "201",
+                            description = "Se creó la persona",
+                            content = {
+                                    @Content(
+                                            mediaType = "application/json",
+                                            schema = @Schema(implementation = PersonSaveDto.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "No se pudo crear la persona",
+                            content = @Content
+                    )
+            }
+    )
+    public ResponseEntity<PersonDto> createPerson(@RequestBody PersonSaveDto personSaveDto){
+        return new ResponseEntity<>(personService.createPerson(personSaveDto), HttpStatus.CREATED);
     }
 
-    void validatePerson(PersonDto person) {
-        if (person.getFirstName() == null || person.getFirstName().isEmpty()) {
-            throw new ValidationException("El nombre de la persona es obligatorio");
+    @Transactional
+    @PutMapping("/persons/{id}")
+    @Operation(summary = "Actualizar una persona")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Se actualizó la persona",
+                            content = {
+                                    @Content(
+                                            mediaType = "application/json",
+                                            schema = @Schema(implementation = PersonSaveDto.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "No se encontró la persona",
+                            content = @Content
+                    )
+            }
+    )
+    public ResponseEntity<PersonDto> updatePerson(@PathVariable("id") Integer id, @RequestBody PersonSaveDto personSaveDto){
+        PersonDto personDto = personService.updatePerson(id, personSaveDto);
+        if (personDto == null) {
+            return ResponseEntity.notFound().build();
         }
-        if(person.getLastName()==null || person.getLastName().isEmpty()){
-            throw new ValidationException("El apellido de la persona es obligatorio");
-        }
-        if(person.getNumberDni()==null || person.getNumberDni().isEmpty()){
-            throw new ValidationException("El DNI de la persona es obligatorio");
-        }
-        if(person.getEmail()==null || person.getEmail().isEmpty()){
-            throw new ValidationException("El email de la persona es obligatorio");
-        }
-        if(person.getPassword()==null || person.getPassword().isEmpty()){
-            throw new ValidationException("La contraseña de la persona es obligatorio");
-        }
-        if(person.getBirthdate()==null){
-            throw new ValidationException("La fecha de nacimiento de la persona es obligatorio");
-        }
-        if(person.getGender()==null ){
-            throw new ValidationException("El género de la persona es obligatorio");
-        }
-        if(person.getPhone()==null || person.getPhone().isEmpty()){
-            throw new ValidationException("El teléfono de la persona es obligatorio");
-        }
-        if(person.getTypeUser()==null){
-            throw new ValidationException("El tipo de usuario de la persona es obligatorio");
-        }
+        return new ResponseEntity<>(personDto, HttpStatus.OK);
     }
 
-    void existsByPersonEmail(String email) {
-        if (personService.existsByPersonEmail(email)) {
-            throw new ValidationException("Ya existe una persona registrada con ese email");
-        }
+    @Transactional
+    @DeleteMapping("/persons/{id}")
+    @Operation(summary = "Eliminar una persona")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Se eliminó la persona",
+                            content = {
+                                    @Content(
+                                            mediaType = "application/json",
+                                            schema = @Schema(implementation = PersonDto.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "No se encontró la persona",
+                            content = @Content
+                    )
+            }
+    )
+    public ResponseEntity<String> deletePerson(@PathVariable Integer id){
+        return new ResponseEntity<>(personService.deletePerson(id), HttpStatus.OK);
     }
 
-    void existByPersonDni(String dni) {
-        if (personService.existsPersonByNumberDni(dni)) {
-            throw new ValidationException("Ya existe una persona registrada con ese DNI");
-        }
-    }
 }

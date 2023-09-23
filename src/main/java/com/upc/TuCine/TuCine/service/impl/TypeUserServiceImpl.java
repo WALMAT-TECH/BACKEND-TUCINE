@@ -1,6 +1,9 @@
 package com.upc.TuCine.TuCine.service.impl;
 
+import com.upc.TuCine.TuCine.dto.ActorDto;
+import com.upc.TuCine.TuCine.dto.TicketDto;
 import com.upc.TuCine.TuCine.dto.TypeUserDto;
+import com.upc.TuCine.TuCine.dto.save.TypeUser.TypeUserSaveDto;
 import com.upc.TuCine.TuCine.exception.ValidationException;
 import com.upc.TuCine.TuCine.model.Ticket;
 import com.upc.TuCine.TuCine.model.TypeUser;
@@ -42,13 +45,35 @@ public class TypeUserServiceImpl implements TypeUserService {
     }
 
     @Override
-    public TypeUserDto createTypeUser(TypeUserDto typeUserDto) {
+    public TypeUserDto createTypeUser(TypeUserSaveDto typeUserSaveDto) {
+
+        TypeUserDto typeUserDto = modelMapper.map(typeUserSaveDto, TypeUserDto.class);
+
         validateTypeUser(typeUserDto);
         existsTypeUserByName(typeUserDto.getName());
         TypeUser typeUser = DtoToEntity(typeUserDto);
         TypeUser createdTypeUser = typeUserRepository.save(typeUser);
         return EntityToDto(createdTypeUser);
     }
+
+    @Override
+    public TypeUserDto updateTypeUser(Integer id, TypeUserSaveDto typeUserSaveDto) {
+        TypeUser typeUser = typeUserRepository.findById(id)
+                .orElseThrow(() -> new ValidationException("El tipo de usuario no existe"));
+        TypeUserDto typeUser1 = EntityToDto(typeUser);
+        validateTypeUser(typeUser1);
+        typeUser.setName(typeUserSaveDto.getName());
+        return EntityToDto(typeUserRepository.save(typeUser));
+    }
+
+    @Override
+    public String deleteTypeUser(Integer id) {
+        TypeUser typeUser = typeUserRepository.findById(id)
+                .orElseThrow(() -> new ValidationException("El tipo de usuario no existe"));
+        typeUserRepository.delete(typeUser);
+        return "El tipo de usuario ha sido eliminado";
+    }
+
     void validateTypeUser(TypeUserDto typeUser) {
         if (typeUser.getName() == null || typeUser.getName().isEmpty()) {
             throw new ValidationException("El nombre del tipo de usuario no puede estar vacío");

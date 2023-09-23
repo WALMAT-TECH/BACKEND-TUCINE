@@ -1,7 +1,10 @@
 package com.upc.TuCine.TuCine.service.impl;
 
+import com.upc.TuCine.TuCine.dto.CategoryDto;
 import com.upc.TuCine.TuCine.dto.ContentRatingDto;
+import com.upc.TuCine.TuCine.dto.save.ContentRating.ContentRatingSaveDto;
 import com.upc.TuCine.TuCine.exception.ValidationException;
+import com.upc.TuCine.TuCine.model.Actor;
 import com.upc.TuCine.TuCine.model.ContentRating;
 import com.upc.TuCine.TuCine.repository.ContentRatingRepository;
 import com.upc.TuCine.TuCine.service.ContentRatingService;
@@ -41,7 +44,10 @@ public class ContentRatingServiceImpl implements ContentRatingService {
     }
 
     @Override
-    public ContentRatingDto createContentRating(ContentRatingDto contentRatingDto) {
+    public ContentRatingDto createContentRating(ContentRatingSaveDto contentRatingSaveDto) {
+
+        ContentRatingDto contentRatingDto = modelMapper.map(contentRatingSaveDto, ContentRatingDto.class);
+
         validateContentRating(contentRatingDto);
         existsContentRatingByName(contentRatingDto.getName());
 
@@ -56,6 +62,29 @@ public class ContentRatingServiceImpl implements ContentRatingService {
             return null;
         }
         return EntityToDto(contentRating);
+    }
+
+    @Override
+    public ContentRatingDto updateContentRating(Integer id, ContentRatingSaveDto contentRatingSaveDto) {
+        ContentRatingDto contentRatingDto = modelMapper.map(contentRatingSaveDto, ContentRatingDto.class);
+        ContentRatingDto contentRatingDto1 = getContentRatingById(id);
+        if (contentRatingDto1 == null) {
+            return null;
+        }
+        contentRatingDto.setName(contentRatingDto1.getName());
+        contentRatingDto.setDescription(contentRatingDto1.getDescription());
+
+        validateContentRating(contentRatingDto);
+        ContentRating contentRating = DtoToEntity(contentRatingDto);
+        return EntityToDto(contentRatingRepository.save(contentRating));
+    }
+
+    @Override
+    public String deleteContentRating(Integer id) {
+
+        ContentRating contentRating = contentRatingRepository.findById(id).orElseThrow(() -> new ValidationException("No existe la clasificacion"));
+        contentRatingRepository.delete(contentRating);
+        return "La clasificacion con nombre " + contentRating.getName() + " ha sido eliminada";
     }
 
     void validateContentRating(ContentRatingDto contentRating) {

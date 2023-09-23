@@ -1,7 +1,9 @@
 package com.upc.TuCine.TuCine.service;
 
+import com.upc.TuCine.TuCine.dto.GroupDto;
 import com.upc.TuCine.TuCine.dto.PersonDto;
 import com.upc.TuCine.TuCine.dto.TypeUserDto;
+import com.upc.TuCine.TuCine.dto.save.Person.PersonSaveDto;
 
 import java.util.List;
 
@@ -10,9 +12,11 @@ public interface PersonService {
 
     TypeUserDto getTypeUserByPersonId(Integer id);
 
-    PersonDto createPerson(PersonDto personDto);
+    PersonDto createPerson(PersonSaveDto personSaveDto);
 
-    boolean existsByPersonEmail (String email);
+    PersonDto updatePerson(Integer id, PersonSaveDto personSaveDto);
 
-    boolean existsPersonByNumberDni(String numberDni);
+    String deletePerson(Integer id);
+
+    List<GroupDto> getAllGroupsByPersonId(Integer id);
 }

@@ -3,6 +3,7 @@ package com.upc.TuCine.TuCine.service.impl;
 import com.upc.TuCine.TuCine.dto.BusinessDto;
 import com.upc.TuCine.TuCine.dto.BusinessTypeDto;
 import com.upc.TuCine.TuCine.dto.ShowtimeDto;
+import com.upc.TuCine.TuCine.dto.save.Business.BusinessSaveDto;
 import com.upc.TuCine.TuCine.exception.ValidationException;
 import com.upc.TuCine.TuCine.model.*;
 import com.upc.TuCine.TuCine.repository.BusinessRepository;
@@ -52,19 +53,24 @@ public class BusinessServiceImpl implements BusinessService {
     }
 
     @Override
-    public BusinessDto createBusiness(BusinessDto businessDto) {
+    public BusinessDto createBusiness(BusinessSaveDto businessSaveDto) {
+
+
+        BusinessDto businessDto = modelMapper.map(businessSaveDto, BusinessDto.class);
 
         validateBusiness(businessDto);
         existsByBusinessName(businessDto.getName());
         existsByBusinessRuc(businessDto.getRuc());
         existsByBusinessEmail(businessDto.getEmail());
 
-
+/*        businessDto.setOwner(ownerRepository.findById(businessSaveDto.getOwner().getId()).orElse(null));
+        businessDto.setBusinessType(businessTypeRepository.findById(businessSaveDto.getBusinessType().getId()).orElse(null));*/
         Owner owner = ownerRepository.findById(businessDto.getOwner().getId()).orElse(null);
         businessDto.setOwner(owner);
 
         BusinessType businessType = businessTypeRepository.findById(businessDto.getBusinessType().getId()).orElse(null);
         businessDto.setBusinessType(businessType);
+
 
         Business business = DtoToEntity(businessDto);
         return EntityToDto(businessRepository.save(business));
@@ -87,7 +93,29 @@ public class BusinessServiceImpl implements BusinessService {
         return EntityToDto(business);
     }
 
+    @Override
+    public BusinessDto updateBusiness(Integer id, BusinessSaveDto businessSaveDto) {
+        BusinessDto businessDto = modelMapper.map(businessSaveDto, BusinessDto.class);
 
+        validateBusiness(businessDto);
+
+        Business business = businessRepository.findById(id).orElse(null);
+        if (business == null) {
+            return null;
+        }
+        businessDto.setId(id);
+        businessDto.setOwner(ownerRepository.findById(businessSaveDto.getOwner().getId()).orElse(null));
+        businessDto.setBusinessType(businessTypeRepository.findById(businessSaveDto.getBusinessType().getId()).orElse(null));
+        business = DtoToEntity(businessDto);
+        return EntityToDto(businessRepository.save(business));
+    }
+
+    @Override
+    public String deleteBusiness(Integer id) {
+        Business business = businessRepository.findById(id).orElseThrow(() -> new ValidationException("No existe el negocio"));
+        businessRepository.delete(business);
+        return "El negocio con nombre " + business.getName() + " ha sido eliminado";
+    }
     @Override
     public BusinessTypeDto getBusinessTypeByBusinessId(Integer id) {
         Business business = businessRepository.getById(id);

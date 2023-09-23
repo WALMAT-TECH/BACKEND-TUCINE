@@ -1,6 +1,7 @@
 package com.upc.TuCine.TuCine.service.impl;
 
 import com.upc.TuCine.TuCine.dto.ShowtimeDto;
+import com.upc.TuCine.TuCine.dto.save.Showtime.ShowtimeSaveDto;
 import com.upc.TuCine.TuCine.exception.ValidationException;
 import com.upc.TuCine.TuCine.model.*;
 import com.upc.TuCine.TuCine.repository.BusinessRepository;
@@ -63,7 +64,13 @@ public class ShowtimeServiceImpl implements ShowtimeService {
     }
 
     @Override
-    public ShowtimeDto createShowtime(ShowtimeDto showtimeDto) {
+    public ShowtimeDto createShowtime(ShowtimeSaveDto showtimeDtoSave) {
+
+        ShowtimeDto showtimeDto = modelMapper.map(showtimeDtoSave, ShowtimeDto.class);
+
+        validateShowtime(showtimeDto);
+        existsFilmById(showtimeDto.getFilm().getId());
+        existsBusinessById(showtimeDto.getBusiness().getId());
 
         Film film = filmRepository.findById(showtimeDto.getFilm().getId()).orElse(null);
         showtimeDto.setFilm(film);
@@ -79,9 +86,6 @@ public class ShowtimeServiceImpl implements ShowtimeService {
         }
         showtimeDto.setPromotion(promotion);
 
-        validateShowtime(showtimeDto);
-        existsFilmById(showtimeDto.getFilm().getId());
-        existsBusinessById(showtimeDto.getBusiness().getId());
         if (showtimeDto.getPromotion() != null) {
             existsPromotionById(showtimeDto.getPromotion().getId());
         }
@@ -92,15 +96,18 @@ public class ShowtimeServiceImpl implements ShowtimeService {
     }
 
     @Override
-    public ShowtimeDto updateShowtime(Integer id, ShowtimeDto showtimeDto) {
+    public ShowtimeDto updateShowtime(Integer id, ShowtimeSaveDto showtimeSaveDto) {
         Showtime showtimeToUpdate = showtimeRepository.findById(id).orElse(null);
         if (showtimeToUpdate == null) {
             return null; // O lanzar una excepción si lo prefieres
         }
+
+        ShowtimeDto showtimeDto = modelMapper.map(showtimeSaveDto, ShowtimeDto.class);
+
         validateShowtime(showtimeDto);
+
         existsFilmById(showtimeDto.getFilm().getId());
         existsBusinessById(showtimeDto.getBusiness().getId());
-        existsPromotionById(showtimeDto.getPromotion().getId());
 
         Business business = businessRepository.findById(showtimeDto.getBusiness().getId()).orElse(null);
         showtimeDto.setBusiness(business);

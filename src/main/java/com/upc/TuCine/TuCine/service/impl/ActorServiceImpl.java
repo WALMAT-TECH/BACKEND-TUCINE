@@ -1,6 +1,7 @@
 package com.upc.TuCine.TuCine.service.impl;
 
 import com.upc.TuCine.TuCine.dto.ActorDto;
+import com.upc.TuCine.TuCine.dto.save.Actor.ActorSaveDto;
 import com.upc.TuCine.TuCine.exception.ValidationException;
 import com.upc.TuCine.TuCine.model.Actor;
 import com.upc.TuCine.TuCine.repository.ActorRepository;
@@ -34,7 +35,9 @@ public class ActorServiceImpl implements ActorService {
     }
 
     @Override
-    public ActorDto createActor(ActorDto actorDto) {
+    public ActorDto createActor(ActorSaveDto actorSaveDto) {
+        ActorDto actorDto = modelMapper.map(actorSaveDto, ActorDto.class);
+
         validateActor(actorDto);
         existActorByFirstName(actorDto.getFirstName(),actorDto.getLastName());
         Actor actor = DtoToEntity(actorDto);
@@ -50,6 +53,26 @@ public class ActorServiceImpl implements ActorService {
         }
         return actorDtos;
     }
+
+    @Override
+    public ActorDto updateActor(Integer id, ActorSaveDto actorSaveDto) {
+        ActorDto actorDto = modelMapper.map(actorSaveDto, ActorDto.class);
+        Actor actor = DtoToEntity(actorDto);
+        Actor actorUpdate = actorRepository.findById(id).orElseThrow(() -> new ValidationException("No existe el actor"));
+        actorUpdate.setFirstName(actor.getFirstName());
+        actorUpdate.setLastName(actor.getLastName());
+        actorUpdate.setBirthday(actor.getBirthday());
+        actorUpdate.setBiography(actor.getBiography());
+        return EntityToDto(actorRepository.save(actorUpdate));
+    }
+
+    @Override
+    public String deleteActor(Integer id) {
+        Actor actor = actorRepository.findById(id).orElseThrow(() -> new ValidationException("No existe el actor"));
+        actorRepository.delete(actor);
+        return "El actor con nombre " + actor.getFirstName() + " " + actor.getLastName() + " ha sido eliminado";
+    }
+
 
     private void validateActor(ActorDto actor) {
         if (actor.getFirstName() == null || actor.getFirstName().isEmpty()) {

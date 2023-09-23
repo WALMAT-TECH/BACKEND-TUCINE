@@ -1,8 +1,8 @@
 package com.upc.TuCine.TuCine.service.impl;
 
 import com.upc.TuCine.TuCine.dto.CustomerDto;
+import com.upc.TuCine.TuCine.dto.save.Customer.CustomerSaveDto;
 import com.upc.TuCine.TuCine.exception.ValidationException;
-import com.upc.TuCine.TuCine.model.Category;
 import com.upc.TuCine.TuCine.model.Customer;
 import com.upc.TuCine.TuCine.model.Person;
 import com.upc.TuCine.TuCine.repository.CustomerRepository;
@@ -48,12 +48,16 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public CustomerDto createCustomer(CustomerDto customerDto) {
+    public CustomerDto createCustomer(CustomerSaveDto customerSaveDto) {
+
+        CustomerDto customerDto = modelMapper.map(customerSaveDto, CustomerDto.class);
 
         validateCustomer(customerDto);
 
         Person person = personRepository.findById(customerDto.getPerson().getId()).orElse(null);
         customerDto.setPerson(person);
+
+        existsCustomerById(customerDto.getId());
 
         Customer customer = DtoToEntity(customerDto);
         return EntityToDto(customerRepository.save(customer));
@@ -62,6 +66,12 @@ public class CustomerServiceImpl implements CustomerService {
     private void validateCustomer(CustomerDto customer) {
         if (customer.getPerson() == null) {
             throw new ValidationException("La persona es obligatoria");
+        }
+    }
+
+    private void existsCustomerById(Integer id) {
+        if (customerRepository.existsById(id)) {
+            throw new ValidationException("El cliente ya existe");
         }
     }
 }
